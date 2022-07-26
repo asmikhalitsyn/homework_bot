@@ -49,7 +49,7 @@ def send_message(bot, message):
 
 
 def get_api_answer(current_timestamp):
-    """Отпрвка запроса к API-сервису Яндекс.Практикум"""
+    """Отпрвка запроса к API-сервису Яндекс.Практикум."""
     timestamp = current_timestamp or int(time.time())
     try:
         homework_statuses = requests.get(
@@ -59,7 +59,7 @@ def get_api_answer(current_timestamp):
         )
         if homework_statuses.status_code != HTTPStatus.OK:
             raise APIResponseStatusCodeException(
-                f'Ошибка при запросе к основному API'
+                'Ошибка при запросе к основному API'
             )
     except Exception as error:
         raise Exception(f'Ошибка при запросе к основному API: {error}')
@@ -68,7 +68,7 @@ def get_api_answer(current_timestamp):
 
 
 def check_response(response):
-    """Проверка ответа от API-сервиса Яндекс.Практикум на коррректность"""
+    """Проверка ответа от API-сервиса Яндекс.Практикум на коррректность."""
     if response is None:
         raise CheckResponseException('В ответе от API нет словаря')
     if not isinstance(response, dict):
@@ -83,7 +83,7 @@ def check_response(response):
 
 
 def parse_status(homework):
-    """Парсинг ответа от API-сервиса Яндекс.Практикум"""
+    """Парсинг ответа от API-сервиса Яндекс.Практикум."""
     homework_name = homework['homework_name']
     homework_status = homework['status']
     if homework_status not in HOMEWORK_STATUSES:
@@ -97,7 +97,7 @@ def parse_status(homework):
 
 
 def check_tokens():
-    """Проверка переменных окружения"""
+    """Проверка переменных окружения."""
     if all([PRACTICUM_TOKEN, TELEGRAM_TOKEN]):
         return True
     return False
