@@ -38,21 +38,31 @@ logger.addHandler(handler)
 
 def send_message(bot, message):
     """Отправка сообщений в telegram-чат."""
+
     try:
         result = bot.send_message(TELEGRAM_CHAT_ID, message)
         logger.info('Сообщение успешно отправлено пользователю')
     except Exception as error:
-        logger.error(f'Произошел сбой при отправке сообщения пользователю: {error}')
+        logger.error(
+            f'Произошел сбой при отправке сообщения пользователю: {error}'
+        )
     return result
 
 
 def get_api_answer(current_timestamp):
     """Отпрвка запроса к API-сервису Яндекс.Практикум"""
+
     timestamp = current_timestamp or int(time.time())
     try:
-        homework_statuses = requests.get(ENDPOINT, headers=HEADERS, params={'from_date': timestamp})
+        homework_statuses = requests.get(
+            ENDPOINT,
+            headers=HEADERS,
+            params={'from_date': timestamp}
+        )
         if homework_statuses.status_code != HTTPStatus.OK:
-            raise APIResponseStatusCodeException(f'Ошибка при запросе к основному API')
+            raise APIResponseStatusCodeException(
+                f'Ошибка при запросе к основному API'
+            )
     except Exception as error:
         raise Exception(f'Ошибка при запросе к основному API: {error}')
     else:
@@ -61,6 +71,7 @@ def get_api_answer(current_timestamp):
 
 def check_response(response):
     """Проверка ответа от API-сервиса Яндекс.Практикум на коррректность"""
+
     if response is None:
         raise CheckResponseException('В ответе от API нет словаря')
     if not isinstance(response, dict):
@@ -76,10 +87,13 @@ def check_response(response):
 
 def parse_status(homework):
     """Парсинг ответа от API-сервиса Яндекс.Практикум"""
+
     homework_name = homework['homework_name']
     homework_status = homework['status']
     if homework_status not in HOMEWORK_STATUSES:
-        raise ValueError(f'Неизвестный статус домашней работы: {homework_status}')
+        raise ValueError(
+            f'Неизвестный статус домашней работы: {homework_status}'
+        )
     if 'homework_name' not in homework:
         raise KeyError('Нет ключа homework_name в словаре')
     verdict = HOMEWORK_STATUSES[homework_status]
@@ -87,6 +101,8 @@ def parse_status(homework):
 
 
 def check_tokens():
+    """Проверка переменных окружения"""
+
     if all([PRACTICUM_TOKEN, TELEGRAM_TOKEN]):
         return True
     return False
@@ -94,6 +110,7 @@ def check_tokens():
 
 def main():
     """Основная логика работы бота."""
+
     if not check_tokens():
         logger.critical('Не хватает обязательной переменной окружения')
     else:
