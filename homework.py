@@ -31,13 +31,15 @@ HOMEWORK_VERDICTS = {
 }
 
 PARSE_STATUS_MESSAGE_ERROR = 'Неизвестный статус домашней работы: {status}'
-PARSE_STATUS_MESSAGE_RESULT = 'Изменился статус проверки работы "{name}". {verdict}'
+PARSE_STATUS_MESSAGE_RESULT = ('Изменился статус проверки работы "{name}".'
+                               ' {verdict}')
 
 CHECK_RESPONSE_MESSAGE_ERROR = 'В ответе от API нет словаря'
 CHECK_RESPONSE_MESSAGE_ERROR_2 = ('Ответ от API не является словарем'
                                   'Полученный тип: {}')
 CHECK_RESPONSE_MESSAGE_ERROR_3 = 'В ответе от API нет ключа homeworks'
-CHECK_RESPONSE_MESSAGE_ERROR_4 = ('Значение ключа homeworks не является списком. '
+CHECK_RESPONSE_MESSAGE_ERROR_4 = ('Значение ключа homeworks'
+                                  ' не является списком. '
                                   'Полученный тип ключа: {}.')
 
 CHECK_TOKENS_LOG_ERROR = 'Не хватает обязательной переменной окружения {name}'
@@ -127,7 +129,9 @@ def check_response(response):
         raise KeyError(CHECK_RESPONSE_MESSAGE_ERROR_3)
     homeworks = response.get('homeworks')
     if not isinstance(homeworks, list):
-        raise TypeError(CHECK_RESPONSE_MESSAGE_ERROR_4.format({type(response["homeworks"])}))
+        raise TypeError(CHECK_RESPONSE_MESSAGE_ERROR_4.format(
+            {type(response["homeworks"])}
+        ))
     return homeworks
 
 
