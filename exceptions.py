@@ -5,6 +5,3 @@ class APIResponseStatusCodeError(Exception):
 class ServerResponseError(Exception):
     pass
 
-
-class TelegramError(Exception):
-    pass

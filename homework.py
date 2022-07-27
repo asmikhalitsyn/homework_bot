@@ -7,9 +7,7 @@ import time
 from dotenv import load_dotenv
 import telegram
 
-from exceptions import APIResponseStatusCodeError
-from exceptions import ServerResponseError
-from exceptions import TelegramError
+from exceptions import APIResponseStatusCodeError, ServerResponseError
 
 load_dotenv()
 
@@ -160,10 +158,13 @@ def parse_status(homework):
 
 def check_tokens():
     """Проверка переменных окружения."""
+    count = 0
     for token in TOKENS:
         if token not in globals() or not globals()[token]:
             logger.critical(NO_TOKEN.format(name=token))
-            return False
+            count += 1
+    if count:
+        return False
     return True
 
 
