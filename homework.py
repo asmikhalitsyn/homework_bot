@@ -39,7 +39,9 @@ HOMEWORKS_NO_LIST = ('Значение ключа homeworks'
                      ' не является списком. '
                      'Полученный тип ключа: {}.')
 
-NO_TOKEN = 'Не хватает обязательной переменной окружения {}'
+NO_TOKEN = 'Не найдены токены {}'
+TOKENS_CORRECT = 'Переменные окружения настроены корректно'
+TOKENS_PROBLEM = 'Отсутствует переменная окружения'
 
 SUCCESS_MESSAGE = 'Сообщение {message} успешно отправлено пользователю'
 ERROR_MESSAGE = ('Произошла ошибка во время отправки сообщения'
@@ -47,20 +49,20 @@ ERROR_MESSAGE = ('Произошла ошибка во время отправк
 
 FAIL_CONNECTION = ('Ошибка подключении к основному API '
                    'с параметрами: '
-                   '{HEADERS}, {params}. '
-                   'URL: {URL}. '
+                   '{headers}, {params}. '
+                   'url: {url}. '
                    'error: {error}. ')
 
 FAIL_STATUS = ('Ошибка при запросе к основному API '
                'с параметрами: '
-               '{HEADERS}, {params}. '
-               'URL: {URL}. '
+               '{headers}, {params}. '
+               'url: {url}. '
                'homework_statuses: {homework_statuses}')
 
 FAIL_SERVER = ('Обнаружена проблема с сервером. '
                'с параметрами: '
-               'URL: {URL}. '
-               '{HEADERS}, {params}. '
+               'url: {url}. '
+               '{headers}, {params}. '
                'server_error: {server_error}.'
                )
 BOT_ERROR = 'Проблема с ботом: {error}'
@@ -156,8 +158,8 @@ def check_tokens():
 def main():
     """Основная логика работы бота."""
     if not check_tokens():
-        raise KeyError('Отсутствует переменная окружения')
-    logger.debug('Переменные окружения настроены корректно')
+        raise KeyError(TOKENS_PROBLEM)
+    logger.debug(TOKENS_CORRECT)
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
     while True:
@@ -171,7 +173,7 @@ def main():
             error_msg = BOT_ERROR.format(error=error)
             logger.exception(error_msg)
             try:
-                bot.send_message(TELEGRAM_CHAT_ID, error_msg)
+                send_message(bot, error_msg)
             except Exception as error:
                 logger.exception(ERROR_MESSAGE.format(error=error))
         finally:
