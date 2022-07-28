@@ -39,33 +39,32 @@ HOMEWORKS_NO_LIST = ('Значение ключа homeworks'
                      ' не является списком. '
                      'Полученный тип ключа: {}.')
 
-NO_TOKEN = 'Не хватает обязательной переменной окружения {name}'
+NO_TOKEN = 'Не хватает обязательной переменной окружения {}'
 
 SUCCESS_MESSAGE = 'Сообщение {message} успешно отправлено пользователю'
 ERROR_MESSAGE = ('Произошла ошибка во время отправки сообщения'
-                 ' {message} в чат: {error}')
+                 'в чат: {error}')
 
 FAIL_CONNECTION = ('Ошибка подключении к основному API '
                    'с параметрами: '
                    '{HEADERS}, {params}. '
-                   'Эндпоинт: {ENDPOINT}. '
-                   'Ошибка: {error}. ')
+                   'URL: {URL}. '
+                   'error: {error}. ')
 
 FAIL_STATUS = ('Ошибка при запросе к основному API '
                'с параметрами: '
                '{HEADERS}, {params}. '
-               'Эндпоинт: {ENDPOINT}. '
-               'Получен ответ: {homework_statuses}')
+               'URL: {URL}. '
+               'homework_statuses: {homework_statuses}')
 
 FAIL_SERVER = ('Обнаружена проблема с сервером. '
                'с параметрами: '
-               'Эндпоинт: {ENDPOINT}. '
+               'URL: {URL}. '
                '{HEADERS}, {params}. '
-               'Код ошибки: {server_error}.'
+               'server_error: {server_error}.'
                )
 BOT_ERROR = 'Проблема с ботом: {error}'
 TOKENS = ['PRACTICUM_TOKEN', 'TELEGRAM_TOKEN', 'TELEGRAM_CHAT_ID']
-KEY_OF_SERVER_ERROR = ['error', 'code']
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -82,48 +81,36 @@ logger.addHandler(file_handler)
 
 def send_message(bot, message):
     """Отправка сообщений в telegram-чат."""
-    try:
-        result = bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
-        logger.info(SUCCESS_MESSAGE.format(message=message))
-    except Exception as error:
-        logger.exception(ERROR_MESSAGE.format(
-            message=message, error=error
-        ))
-    return result
+    bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
+    logger.info(SUCCESS_MESSAGE.format(message=message))
 
 
 def get_api_answer(current_timestamp):
     """Отпрвка запроса к API-сервису Яндекс.Практикум."""
-    params = {'from_date': current_timestamp}
+    params_connection = {
+        'url': ENDPOINT,
+        'headers': HEADERS,
+        'params': {'from_date': current_timestamp}
+    }
     try:
-        homework_statuses = requests.get(
-            ENDPOINT,
-            headers=HEADERS,
-            params=params
-        )
+        homework_statuses = requests.get(**params_connection)
     except requests.exceptions.RequestException as error:
         raise ConnectionError(FAIL_CONNECTION.format(
-            HEADERS=HEADERS,
-            params=params,
-            ENDPOINT=ENDPOINT,
-            error=error
+            error=error,
+            **params_connection
         ))
     homework = homework_statuses.json()
-    for key in KEY_OF_SERVER_ERROR:
+    for key in ('error', 'code'):
         if key in homework:
             raise ServerResponseError(FAIL_SERVER.format(
                 server_error=homework.get(key),
-                ENDPOINT=ENDPOINT,
-                HEADERS=HEADERS,
-                params=params
+                **params_connection
             ))
 
     if homework_statuses.status_code != HTTPStatus.OK:
         raise APIResponseStatusCodeError(FAIL_STATUS.format(
-            HEADERS=HEADERS,
-            params=params,
-            ENDPOINT=ENDPOINT,
-            homework_statuses=homework_statuses.status_code
+            homework_statuses=homework_statuses.status_code,
+            **params_connection
         ))
     return homework
 
@@ -139,7 +126,7 @@ def check_response(response):
     homeworks = response.get('homeworks')
     if not isinstance(homeworks, list):
         raise TypeError(HOMEWORKS_NO_LIST.format(
-            {type(homeworks)}
+            type(homeworks)
         ))
     return homeworks
 
@@ -158,12 +145,10 @@ def parse_status(homework):
 
 def check_tokens():
     """Проверка переменных окружения."""
-    count = 0
-    for token in TOKENS:
-        if token not in globals() or not globals()[token]:
-            logger.critical(NO_TOKEN.format(name=token))
-            count += 1
-    if count:
+    missed_token = [token for token in TOKENS
+                    if token not in globals() or not globals()[token]]
+    if missed_token:
+        logger.critical(NO_TOKEN.format(missed_token))
         return False
     return True
 
@@ -175,23 +160,22 @@ def main():
     logger.debug('Переменные окружения настроены корректно')
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
-    old_status = ''
     while True:
         try:
             response = get_api_answer(current_timestamp)
             homework = check_response(response)
             if homework:
-                status = parse_status(homework[0])
-                if old_status != status:
-                    send_message(bot, status)
-                    old_status = status
-            current_timestamp = response.get('current_date', current_timestamp)
+                send_message(bot, parse_status(homework[0]))
+            current_timestamp = response.get(
+                    'current_date', current_timestamp
+            )
         except Exception as error:
-            logger.exception(BOT_ERROR.format(error=error))
+            error_msg = BOT_ERROR.format(error=error)
+            logger.exception(error_msg)
             try:
-                send_message(bot, BOT_ERROR.format(error=error))
-            except Exception:
-                pass
+                bot.send_message(TELEGRAM_CHAT_ID, error_msg)
+            except Exception as error:
+                logger.exception(ERROR_MESSAGE.format(error=error))
         finally:
             time.sleep(RETRY_TIME)
 
