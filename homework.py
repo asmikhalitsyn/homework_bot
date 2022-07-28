@@ -166,9 +166,7 @@ def main():
             homework = check_response(response)
             if homework:
                 send_message(bot, parse_status(homework[0]))
-            current_timestamp = response.get(
-                    'current_date', current_timestamp
-            )
+            current_timestamp = response.get('current_date', current_timestamp)
         except Exception as error:
             error_msg = BOT_ERROR.format(error=error)
             logger.exception(error_msg)
